@@ -12,7 +12,9 @@ throw () {
 BRIEF=0
 LEAFONLY=0
 PRUNE=0
+ARRAYCOUNTER=1
 SORTDATA=""
+SORTOUT=""
 NORMALIZE=0
 
 usage() {
@@ -38,6 +40,12 @@ usage() {
   echo "     output with contents sorted like for -S='args', e.g. use -N='-n'"
   echo "     This is equivalent to -N -S='args', just more compact to write"
   echo
+  echo "Deprecated/experimental features that might be removed later:"
+  echo "-A - Disable the item number field in arrays. The result may be not"
+  echo "     correctly ordered (different items mixed up) but the text output"
+  echo "     is stable for validation purposes. Array index is empty set ',,'"
+  echo "-s[='args'] - Pass the textual output through 'sort' before returning"
+  echo
 }
 
 parse_options() {
@@ -48,6 +56,8 @@ parse_options() {
     case "$1" in
       -h) usage
           exit 0
+      ;;
+      -A) ARRAYCOUNTER=0
       ;;
       -b) BRIEF=1
           LEAFONLY=1
@@ -65,6 +75,10 @@ parse_options() {
       -S) SORTDATA="sort"
       ;;
       -S=*) SORTDATA="sort `echo "$1" | sed 's,^-S=,,'`"
+      ;;
+      -s) SORTOUT="sort"
+      ;;
+      -s=*) SORTOUT="sort `echo "$1" | sed 's,^-s=,,'`"
       ;;
       ?*) echo "ERROR: Unknown option."
           usage
@@ -177,7 +191,11 @@ parse_array () {
     *)
       while :
       do
-        parse_value "$1" "$index"
+        if [ "$ARRAYCOUNTER" = 1 ]; then
+          parse_value "$1" "$index"
+        else
+          parse_value "$1"
+        fi
         index=$((index+1))
         ary="$ary""$value"
         if [ -n "$SORTDATA" ]; then
@@ -280,6 +298,8 @@ parse () {
   read -r token
   parse_value
   read -r token
+  ### TODO: Support for multiple JSON documents concatenated into one file
+  ### could go here...
   case "$token" in
     '') ;;
     *) throw "EXPECTED EOF GOT $token" ;;
@@ -298,5 +318,9 @@ smart_parse() {
 if ([ "$0" = "$BASH_SOURCE" ] || ! [ -n "$BASH_SOURCE" ]);
 then
   parse_options "$@"
-  smart_parse
+  if [ -n "$SORTOUT" ]; then
+    smart_parse | $SORTOUT
+  else
+    smart_parse
+  fi
 fi
