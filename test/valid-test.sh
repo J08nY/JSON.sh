@@ -33,7 +33,7 @@ tests="$(echo "$FILES" | wc -l)"
 tests="$(expr $tests \* 8)"
 echo "1..$tests"
 
-set -x
+#set -x
 
 # Force zsh to expand $A into multiple words
 is_wordsplit_disabled="$(unsetopt 2>/dev/null | grep -c '^shwordsplit$')"

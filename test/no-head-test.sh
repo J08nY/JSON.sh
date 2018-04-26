@@ -20,7 +20,7 @@ i=0
 tests="$(ls -1 valid/*.json | wc -l)"
 echo "1..$tests"
 
-set -x
+#set -x
 
 for input in valid/*.json
 do

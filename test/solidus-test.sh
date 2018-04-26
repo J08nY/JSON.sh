@@ -27,7 +27,7 @@ else
   echo "ok $i - solidus escaping was left intact"
 fi
 
-set -x
+#set -x
 
 i="$(expr $i + 1)"
 JSONSH_OUT="$(eval jsonsh_cli -s < "$INPUT")" && \
