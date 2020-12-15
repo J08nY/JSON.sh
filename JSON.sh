@@ -169,6 +169,8 @@ throw() {
   exit 1
 }
 
+TABCHAR="`printf '\t'`"
+
 BRIEF=0
 LEAFONLY=0
 PRUNE=0
@@ -182,6 +184,8 @@ NORMALIZE_NUMBERS=0
 NORMALIZE_NUMBERS_FORMAT='%.6f'
 NORMALIZE_NUMBERS_STRIP=0
 PRETTYPRINT=0
+PRETTYPRINT_OBJSEP=' : '
+PRETTYPRINT_INDENT="${TABCHAR}"
 EXTRACT_JPATH=""
 SHELLABLE_OUTPUT=""
 TOXIC_NEWLINE=0
@@ -283,6 +287,8 @@ usage() {
   echo "--pretty-print - enable line-separated TAB-indented output mode"
   echo "     Note that it makes sense with normalized output (can be sorted too)"
   echo "     or a strict-matching --shellable-output=strings request"
+  echo "--pretty-print-objsep STR - separator between object key and value, def ' : '"
+  echo "--pretty-print-indent STR - one indent level, default TAB character"
   echo
   echo "To help JSON-related scripting, with '-Q' an input plaintext can be cooked"
   echo "into a string valid for JSON (backslashes, quotes and newlines escaped,"
@@ -366,6 +372,8 @@ parse_options() {
       ;;
       --pretty-print) PRETTYPRINT=1
       ;;
+      --pretty-print-objsep) PRETTYPRINT_OBJSEP="$2"; shift ;;
+      --pretty-print-indent) PRETTYPRINT_INDENT="$2"; shift ;;
       -N) NORMALIZE=1
       ;;
       -N=*) NORMALIZE=1
@@ -640,13 +648,12 @@ tokenize() {
 }
 
 # Collect indentation chars
-TABCHAR="`printf '\t'`"
 INDENT=''
 parse_array() {
   local index=0
   local ary=''
   local aryml=''
-  local INDENT_NEXT="${INDENT}${TABCHAR}"
+  local INDENT_NEXT="${INDENT}${PRETTYPRINT_INDENT}"
   # Alas, dash and busybox get confused with sub-values in recursive function calls
   local INDENT_ORIG="${INDENT}"
   read -r token
@@ -712,7 +719,7 @@ parse_object() {
   local key=''
   local obj=''
   local objml=''
-  local INDENT_NEXT="${INDENT}${TABCHAR}"
+  local INDENT_NEXT="${INDENT}${PRETTYPRINT_INDENT}"
   local INDENT_ORIG="${INDENT}"
   read -r token
   print_debug $DEBUGLEVEL_PRINTTOKEN "parse_object(1):" "token='$token'"
@@ -735,8 +742,8 @@ parse_object() {
         print_debug $DEBUGLEVEL_PRINTTOKEN "parse_object(3):" "token='$token'"
         INDENT="${INDENT_NEXT}" parse_value "$1" "$key"
         if [ "$PRETTYPRINT" = 1 ]; then
-            [ -z "$obj" ] && obj="${INDENT_NEXT}$key : $value" || obj="$obj
-${INDENT_NEXT}$key : $value"
+            [ -z "$obj" ] && obj="${INDENT_NEXT}$key${PRETTYPRINT_OBJSEP}$value" || obj="$obj
+${INDENT_NEXT}$key${PRETTYPRINT_OBJSEP}$value"
             if [ -n "$SORTDATA_OBJ" ]; then
                 objml="$obj"
             fi
