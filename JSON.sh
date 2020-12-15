@@ -99,7 +99,7 @@ case "$SHELL_BASENAME" in
     bash)
         SHELL_REGEX=yes
         SHELL_TWOSLASH=yes
-        SHELL_PIPEFAIL=yes
+        SHELL_PIPEFAIL='set -o pipefail'
         ;;
     dash|ash) # The spartan bare minimum
         ;;
@@ -113,17 +113,19 @@ case "$SHELL_BASENAME" in
     zsh)
         SHELL_REGEX=yes
         SHELL_TWOSLASH=unquoted
+        SHELL_PIPEFAIL='setopt pipe_fail'
         ;;
     *)
         if [ -n "${BASH-}" ] || [ -n "${BASH_VERSION-}" ] || [ -n "${BASH_SOURCE-}" ] ; then
             SHELL_REGEX=yes
             SHELL_TWOSLASH=yes
             SHELL_BASENAME=bash
-            SHELL_PIPEFAIL=yes
+            SHELL_PIPEFAIL='set -o pipefail'
         elif [ -n "${ZSH_VERSION-}" ] ; then
             SHELL_REGEX=yes
             SHELL_TWOSLASH=unquoted
             SHELL_BASENAME=zsh
+            SHELL_PIPEFAIL='setopt pipe_fail'
         else
             SHELL_SUPPORTED=no
         fi
@@ -952,10 +954,10 @@ parse() {
 smart_parse() {
   ### Piping obfuscates errors thrown by parse()
   local THIS_PID=""
-  if [ "$SHELL_PIPEFAIL" = yes ]; then
-    set -o pipefail
-  else
+  if [ "$SHELL_PIPEFAIL" = no ]; then
     THIS_PID=$$
+  else
+    eval $SHELL_PIPEFAIL
   fi
 
   strip_newlines | \
