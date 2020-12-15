@@ -647,6 +647,8 @@ parse_array() {
   local ary=''
   local aryml=''
   local INDENT_NEXT="${INDENT}${TABCHAR}"
+  # Alas, dash and busybox get confused with sub-values in recursive function calls
+  local INDENT_ORIG="${INDENT}"
   read -r token
   print_debug $DEBUGLEVEL_PRINTTOKEN "parse_array(1):" "token='$token'"
   case "$token" in
@@ -696,9 +698,9 @@ $value"
   if [ "$PRETTYPRINT" = 1 ]; then
     # The opening bracket trails a space after preceding object name (being its value)
     if [ "${#ary}" = 0 ]; then
-        value="$(printf '[\n%s]\n' "$INDENT")"
+        value="$(printf '[\n%s]\n' "$INDENT_ORIG")"
     else
-        value="$(printf '[\n%s\n%s]\n' "$ary" "$INDENT")"
+        value="$(printf '[\n%s\n%s]\n' "$ary" "$INDENT_ORIG")"
     fi
   else
     value="$(printf '[%s]' "$ary")"
@@ -711,6 +713,7 @@ parse_object() {
   local obj=''
   local objml=''
   local INDENT_NEXT="${INDENT}${TABCHAR}"
+  local INDENT_ORIG="${INDENT}"
   read -r token
   print_debug $DEBUGLEVEL_PRINTTOKEN "parse_object(1):" "token='$token'"
   case "$token" in
@@ -772,9 +775,9 @@ $key:$value"
   if [ "$PRETTYPRINT" = 1 ]; then
     # The opening brace trails a space after preceding object name (being its value)
     if [ "${#obj}" = 0 ]; then
-        value="$(printf '{\n%s}\n' "$INDENT")"
+        value="$(printf '{\n%s}\n' "$INDENT_ORIG")"
     else
-        value="$(printf '{\n%s\n%s}\n' "$obj" "$INDENT")"
+        value="$(printf '{\n%s\n%s}\n' "$obj" "$INDENT_ORIG")"
     fi
   else
     value="$(printf '{%s}' "$obj")"
