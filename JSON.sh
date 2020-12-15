@@ -639,7 +639,7 @@ tokenize() {
   # which in particular fixes cases like `JSON.sh < /dev/null`
   { cat ; echo ""; } | \
   tee_stderr BEFORE_TOKENIZER $DEBUGLEVEL_PRINTTOKEN_PIPELINE | \
-  $GREP_O "$STRING|$NUMBER|$KEYWORD|$SPACE|.|^$" | { $GEGREP -v "^$SPACE"'*$' || true ; } | \
+  $GREP_O "$STRING|$NUMBER|$KEYWORD|$SPACE|.|"'^$' | { $GEGREP -v '(^'"$SPACE"'$|^$)' || true ; } | \
   tee_stderr AFTER_TOKENIZER $DEBUGLEVEL_PRINTTOKEN_PIPELINE
   RES=$?
   if [ "$is_wordsplit_disabled" != 0 ]; then unsetopt shwordsplit; fi
