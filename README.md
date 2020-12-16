@@ -93,7 +93,11 @@ the markup (multilines are automatically escaped into backslash+n):
 
 * `-S`
 > Sort the contents of items in JSON markup and leaf-list markup:
-`sort` objects by key names and then values, and arrays by values
+`sort` objects by key names and then values, and arrays by values.
+
+Note that by JSON spec, contents of `[]` arrays are normally treated
+as an ordered list, so `[1,2,3] != [3,2,1]` unless your own schema
+and code allow them to be randomly ordered with same set of items.
 
 * `-S='args'`
 > Use `sort $args` for content sorting, e.g. use `-S='-n -r'` for
@@ -566,6 +570,7 @@ The Illumos Project\tSunOS 5.11\tillumos-ad69a33\tJanuary 2015
 * [step-/JSON.awk](https://github.com/step-/JSON.awk) JSON.sh ported to awk
 * [kristopolous/TickTick](https://github.com/kristopolous/TickTick) Object Oriented BASH
 * [archan937/jsonv.sh](https://github.com/archan937/jsonv.sh)
+* [mclarkson/JSONPath.sh](https://github.com/mclarkson/JSONPath.sh) JSONPath based on JSON.sh
 
 ## Installation
 

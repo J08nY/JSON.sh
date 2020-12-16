@@ -94,10 +94,12 @@ SHELL_REGEX=no
 SHELL_TWOSLASH=no
 
 SHELL_SUPPORTED=yes
+SHELL_PIPEFAIL=no
 case "$SHELL_BASENAME" in
     bash)
         SHELL_REGEX=yes
         SHELL_TWOSLASH=yes
+        SHELL_PIPEFAIL='set -o pipefail'
         ;;
     dash|ash) # The spartan bare minimum
         ;;
@@ -111,16 +113,19 @@ case "$SHELL_BASENAME" in
     zsh)
         SHELL_REGEX=yes
         SHELL_TWOSLASH=unquoted
+        SHELL_PIPEFAIL='setopt pipe_fail'
         ;;
     *)
         if [ -n "${BASH-}" ] || [ -n "${BASH_VERSION-}" ] || [ -n "${BASH_SOURCE-}" ] ; then
             SHELL_REGEX=yes
             SHELL_TWOSLASH=yes
             SHELL_BASENAME=bash
+            SHELL_PIPEFAIL='set -o pipefail'
         elif [ -n "${ZSH_VERSION-}" ] ; then
             SHELL_REGEX=yes
             SHELL_TWOSLASH=unquoted
             SHELL_BASENAME=zsh
+            SHELL_PIPEFAIL='setopt pipe_fail'
         else
             SHELL_SUPPORTED=no
         fi
@@ -164,6 +169,8 @@ throw() {
   exit 1
 }
 
+TABCHAR="`printf '\t'`"
+
 BRIEF=0
 LEAFONLY=0
 PRUNE=0
@@ -176,6 +183,9 @@ NORMALIZE=0
 NORMALIZE_NUMBERS=0
 NORMALIZE_NUMBERS_FORMAT='%.6f'
 NORMALIZE_NUMBERS_STRIP=0
+PRETTYPRINT=0
+PRETTYPRINT_OBJSEP=' : '
+PRETTYPRINT_INDENT="${TABCHAR}"
 EXTRACT_JPATH=""
 SHELLABLE_OUTPUT=""
 TOXIC_NEWLINE=0
@@ -217,7 +227,7 @@ findbin() {
 
 usage() {
   echo
-  echo "Usage: JSON.sh [-b] [-l] [-p] [ -P] [-s] [--no-newline] [-d] \ "
+  echo "Usage: JSON.sh [-b] [-l] [-p] [-P] [-s] [--no-newline] [-d] \ "
   echo "               [-x 'regex'] [-S|-S='args'] [-N|-N='args'] \ "
   echo "               [-Nnx|-Nnx='fmtstr'|-Nn|-Nn='fmtstr'] < markup.json"
   echo "       JSON.sh [-h]"
@@ -273,6 +283,12 @@ usage() {
   echo "-Nn='fmtstr' - printf the detected numeric values with the fmtstr conversion"
   echo "-Nn  - assume 'fmtstr'='%.6f' (with 6 precision digits after period)"
   echo "-Nnx - -Nn + strip trailing zeroes and trailing period (for whole numbers)"
+  echo
+  echo "--pretty-print - enable line-separated TAB-indented output mode"
+  echo "     Note that it makes sense with normalized output (can be sorted too)"
+  echo "     or a strict-matching --shellable-output=strings request"
+  echo "--pretty-print-objsep STR - separator between object key and value, def ' : '"
+  echo "--pretty-print-indent STR - one indent level, default TAB character"
   echo
   echo "To help JSON-related scripting, with '-Q' an input plaintext can be cooked"
   echo "into a string valid for JSON (backslashes, quotes and newlines escaped,"
@@ -354,6 +370,10 @@ parse_options() {
       ;;
       -s) NORMALIZE_SOLIDUS=1
       ;;
+      --pretty-print) PRETTYPRINT=1
+      ;;
+      --pretty-print-objsep) PRETTYPRINT_OBJSEP="$2"; shift ;;
+      --pretty-print-indent) PRETTYPRINT_INDENT="$2"; shift ;;
       -N) NORMALIZE=1
       ;;
       -N=*) NORMALIZE=1
@@ -613,8 +633,13 @@ tokenize() {
   # Force zsh to expand $GREP_O into multiple words
   is_wordsplit_disabled="$(unsetopt 2>/dev/null | grep -c '^shwordsplit$')"
   if [ "$is_wordsplit_disabled" != 0 ]; then setopt shwordsplit; fi
+  # Note: we do not fail for empty documents (including whitespace-only) here
+  # The pedantic mode handles that if desired by caller
+  # We do just in case make sure last line ends with EOL however
+  # which in particular fixes cases like `JSON.sh < /dev/null`
+  { cat ; echo ""; } | \
   tee_stderr BEFORE_TOKENIZER $DEBUGLEVEL_PRINTTOKEN_PIPELINE | \
-  $GREP_O "$STRING|$NUMBER|$KEYWORD|$SPACE|." | $GEGREP -v "^$SPACE"'$' | \
+  $GREP_O "$STRING|$NUMBER|$KEYWORD|$SPACE|.|"'^$' | { $GEGREP -v '(^'"$SPACE"'$|^$)' || true ; } | \
   tee_stderr AFTER_TOKENIZER $DEBUGLEVEL_PRINTTOKEN_PIPELINE
   RES=$?
   if [ "$is_wordsplit_disabled" != 0 ]; then unsetopt shwordsplit; fi
@@ -622,10 +647,15 @@ tokenize() {
   return $RES
 }
 
+# Collect indentation chars
+INDENT=''
 parse_array() {
   local index=0
   local ary=''
   local aryml=''
+  local INDENT_NEXT="${INDENT}${PRETTYPRINT_INDENT}"
+  # Alas, dash and busybox get confused with sub-values in recursive function calls
+  local INDENT_ORIG="${INDENT}"
   read -r token
   print_debug $DEBUGLEVEL_PRINTTOKEN "parse_array(1):" "token='$token'"
   case "$token" in
@@ -633,12 +663,20 @@ parse_array() {
     *)
       while :
       do
-        parse_value "$1" "$index"
+        INDENT="${INDENT_NEXT}" parse_value "$1" "$index"
         index="$(expr $index + 1)"
-        ary="$ary""$value"
-        if [ -n "$SORTDATA_ARR" ]; then
-            [ -z "$aryml" ] && aryml="$value" || aryml="$aryml
+        if [ "$PRETTYPRINT" = 1 ]; then
+            [ -z "$ary" ] && ary="${INDENT_NEXT}$value" || ary="$ary
+${INDENT_NEXT}$value"
+            if [ -n "$SORTDATA_ARR" ]; then
+                aryml="$ary"
+            fi
+        else
+            ary="$ary""$value"
+            if [ -n "$SORTDATA_ARR" ]; then
+                [ -z "$aryml" ] && aryml="$value" || aryml="$aryml
 $value"
+            fi
         fi
         read -r token
         case "$token" in
@@ -651,7 +689,11 @@ $value"
       done
       ;;
   esac
-  if [ -n "$SORTDATA_ARR" ]; then
+  if [ -n "$SORTDATA_ARR" ] && [ "$PRETTYPRINT" = 0 ]; then
+    # For sorting mode, smart_parse first normalizes and sorts
+    # the input data without other optional constraints, then
+    # the result is filtered for final output with another pass,
+    # where we might indent it below.
     # Force zsh to expand $SORTDATA* into multiple words
     is_wordsplit_disabled="$(unsetopt 2>/dev/null | grep -c '^shwordsplit$')"
     if [ "$is_wordsplit_disabled" != 0 ]; then setopt shwordsplit; fi
@@ -659,7 +701,17 @@ $value"
     if [ "$is_wordsplit_disabled" != 0 ]; then unsetopt shwordsplit; fi
     unset is_wordsplit_disabled || true
   fi
-  [ "$BRIEF" = 0 ] && value="$(printf '[%s]' "$ary")" || value=""
+  [ "$BRIEF" = 0 ] && \
+  if [ "$PRETTYPRINT" = 1 ]; then
+    # The opening bracket trails a space after preceding object name (being its value)
+    if [ "${#ary}" = 0 ]; then
+        value="$(printf '[\n%s]\n' "$INDENT_ORIG")"
+    else
+        value="$(printf '[\n%s\n%s]\n' "$ary" "$INDENT_ORIG")"
+    fi
+  else
+    value="$(printf '[%s]' "$ary")"
+  fi || value=""
   :
 }
 
@@ -667,6 +719,8 @@ parse_object() {
   local key=''
   local obj=''
   local objml=''
+  local INDENT_NEXT="${INDENT}${PRETTYPRINT_INDENT}"
+  local INDENT_ORIG="${INDENT}"
   read -r token
   print_debug $DEBUGLEVEL_PRINTTOKEN "parse_object(1):" "token='$token'"
   case "$token" in
@@ -686,11 +740,19 @@ parse_object() {
         esac
         read -r token
         print_debug $DEBUGLEVEL_PRINTTOKEN "parse_object(3):" "token='$token'"
-        parse_value "$1" "$key"
-        obj="$obj$key:$value"
-        if [ -n "$SORTDATA_OBJ" ]; then
-            [ -z "$objml" ] && objml="$key:$value" || objml="$objml
+        INDENT="${INDENT_NEXT}" parse_value "$1" "$key"
+        if [ "$PRETTYPRINT" = 1 ]; then
+            [ -z "$obj" ] && obj="${INDENT_NEXT}$key${PRETTYPRINT_OBJSEP}$value" || obj="$obj
+${INDENT_NEXT}$key${PRETTYPRINT_OBJSEP}$value"
+            if [ -n "$SORTDATA_OBJ" ]; then
+                objml="$obj"
+            fi
+        else
+            obj="$obj$key:$value"
+            if [ -n "$SORTDATA_OBJ" ]; then
+                [ -z "$objml" ] && objml="$key:$value" || objml="$objml
 $key:$value"
+            fi
         fi
         read -r token
         print_debug $DEBUGLEVEL_PRINTTOKEN "parse_object(4):" "token='$token'"
@@ -704,7 +766,11 @@ $key:$value"
       done
     ;;
   esac
-  if [ -n "$SORTDATA_OBJ" ]; then
+  if [ -n "$SORTDATA_OBJ" ] && [ "$PRETTYPRINT" = 0 ]; then
+    # For sorting mode, smart_parse first normalizes and sorts
+    # the input data without other optional constraints, then
+    # the result is filtered for final output with another pass,
+    # where we might indent it below.
     # Force zsh to expand $SORTDATA* into multiple words
     is_wordsplit_disabled="$(unsetopt 2>/dev/null | grep -c '^shwordsplit$')"
     if [ "$is_wordsplit_disabled" != 0 ]; then setopt shwordsplit; fi
@@ -712,7 +778,17 @@ $key:$value"
     if [ "$is_wordsplit_disabled" != 0 ]; then unsetopt shwordsplit; fi
     unset is_wordsplit_disabled || true
   fi
-  [ "$BRIEF" = 0 ] && value="$(printf '{%s}' "$obj")" || value=""
+  [ "$BRIEF" = 0 ] && \
+  if [ "$PRETTYPRINT" = 1 ]; then
+    # The opening brace trails a space after preceding object name (being its value)
+    if [ "${#obj}" = 0 ]; then
+        value="$(printf '{\n%s}\n' "$INDENT_ORIG")"
+    else
+        value="$(printf '{\n%s\n%s}\n' "$obj" "$INDENT_ORIG")"
+    fi
+  else
+    value="$(printf '{%s}' "$obj")"
+  fi || value=""
   :
 }
 
@@ -724,21 +800,41 @@ parse_value() {
   local isleaf=0
   local isempty=0
   local print=0
+  local INDENT_VALUE=""
   case "$token" in
     '{') parse_object "$jpath"
-       [ "$value" = '{}' ] && isempty=1
-       ;;
+        INDENT_VALUE="${INDENT}"
+        if [ "$PRETTYPRINT" = 1 ]; then
+            [ "$value" = '{
+'"${INDENT}"'}' ] && isempty=1
+        else
+            [ "$value" = '{}' ] && isempty=1
+        fi
+        ;;
     '[') parse_array  "$jpath"
-       [ "$value" = '[]' ] && isempty=1
-       ;;
+        INDENT_VALUE="${INDENT}"
+        if [ "$PRETTYPRINT" = 1 ]; then
+            [ "$value" = '[
+'"${INDENT}"']' ] && isempty=1
+        else
+            [ "$value" = '[]' ] && isempty=1
+        fi
+        ;;
     # At this point, the only valid single-character tokens are digits.
     ''|[!0-9]) if [ "$ALLOWEMPTYINPUT" = 1 ] && [ -z "$jpath" ] && [ -z "$token" ]; then
             print_debug $DEBUGLEVEL_PRINTPATHVAL \
                 'Got a NULL document as input (no jpath, no token)' >&2
-            value='{}'
+            if [ "$PRETTYPRINT" = 1 ]; then
+                value='{
+'"${INDENT}"'}'
+            else
+                value='{}'
+            fi
+            isempty=1
         else
             throw "EXPECTED value GOT '${token:-EOF}'"
-        fi ;;
+        fi
+        ;;
     +*|-*|[0-9]*|.*)  # Potential number - separate hit in case for efficiency
        print_debug $DEBUGLEVEL_PRINTPATHVAL \
             "token '$token' is a suspected number" >&2
@@ -794,7 +890,9 @@ parse_value() {
 
   if [ "$NORMALIZE" = 1 ]; then
     # Ensure a "true" output from the "if" for "return"
-    if [ "$jpath" != '' ]; then : ; else
+    if [ "$jpath" != '' ]; then
+        :
+    else
         print_debug $DEBUGLEVEL_PRINTPATHVAL \
             "Non-root keys were skipped due to normalization mode"
         printf "%s\n" "$value"
@@ -837,6 +935,9 @@ parse_value() {
             '"'*'"') pvalue="$(echo "$value" | $GSED -e 's,^",,' -e 's,"$,,')" ;;
             *) pvalue="$value" ;;
         esac
+        if [ "$PRETTYPRINT" = 1 ]; then
+           pvalue="$(printf '%s%s' "$INDENT_VALUE" "$pvalue")"
+        fi
     fi
     case "$SHELLABLE_OUTPUT" in
         string)   printf '%s\n' "$pvalue" ; QUICK_ABORT=true ; return 0 ;;
@@ -855,16 +956,24 @@ parse() {
   read -r token
   print_debug $DEBUGLEVEL_PRINTTOKEN "parse(2):" "token='$token' QUICK_ABORT=$QUICK_ABORT"
   case "$token" in
-    '') ;;
+    '') return 0 ;;
     *) $QUICK_ABORT || throw "EXPECTED EOF GOT '$token'" ;;
   esac
 }
 
 smart_parse() {
+  ### Piping obfuscates errors thrown by parse()
+  local THIS_PID=""
+  if [ "$SHELL_PIPEFAIL" = no ]; then
+    THIS_PID=$$
+  else
+    eval $SHELL_PIPEFAIL
+  fi
+
   strip_newlines | \
   tokenize | if [ -n "$SORTDATA_OBJ$SORTDATA_ARR" ] ; then
       ### Any type of sort was enabled
-      ( NORMALIZE=1 LEAFONLY=0 BRIEF=0 parse ) \
+      ( ( NORMALIZE=1 LEAFONLY=0 BRIEF=0 PRETTYPRINT=0 parse ) || { RET=$? ; if [ -n "$THIS_PID" ] ; then kill -15 $THIS_PID ; exit $RET; fi; } ) \
       | tokenize | parse
     else
       parse
