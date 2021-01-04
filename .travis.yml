@@ -86,9 +86,15 @@ before_install:
         brew update
     fi
     for P in $SHELL_PROGS ; do
-      if ! command -v "$P" ; then
-        brew install $P || brew install homebrew/cask/$P
+      if command -v "$P" ; then
+        case "$P" in
+          bash) case "`bash -c 'echo $BASH_VERSION'`" in
+            1.*|2.*|3.*) ;; ### Too old, fall through to install new
+            *) continue ;;
+          *) continue ;;
+        esac
       fi
+      brew install $P || brew install homebrew/cask/$P || brew install --build-from-source $P
     done
   fi
 
