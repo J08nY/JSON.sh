@@ -134,7 +134,7 @@ esac
 
 # TODO: detect having been sourced into non-bash shells?
 if [ -z "${JSONSH_SOURCED-}" ]; then
-    if [ -n "${DEBUG-}" ] && [ "$DEBUG" != 0 ] && [ "$DEBUG" != no ]; then set | egrep '^[A-Za-z0-9_].*=' | sort >&2 ; fi
+    if [ -n "${DEBUG-}" ] && [ "$DEBUG" != 0 ] && [ "$DEBUG" != no ]; then set | grep -E '^[A-Za-z0-9_].*=' | sort >&2 ; fi
     case "$SHELL_BASENAME" in
         bash)
             # All this weird parsing because busybox sh can't handle a
@@ -653,7 +653,7 @@ tokenize() {
   local SPACE='[[:space:]]+'
 
   # Force zsh to expand $GREP_O into multiple words
-  is_wordsplit_disabled="$(unsetopt 2>/dev/null | grep -c '^shwordsplit$')"
+  is_wordsplit_disabled="$(unsetopt 2>/dev/null | grep -Ec '^shwordsplit$')"
   if [ "$is_wordsplit_disabled" != 0 ]; then setopt shwordsplit; fi
   # Note: we do not fail for empty documents (including whitespace-only) here
   # The pedantic mode handles that if desired by caller
@@ -718,7 +718,7 @@ $value"
     # the result is filtered for final output with another pass,
     # where we might indent it below.
     # Force zsh to expand $SORTDATA* into multiple words
-    is_wordsplit_disabled="$(unsetopt 2>/dev/null | grep -c '^shwordsplit$')"
+    is_wordsplit_disabled="$(unsetopt 2>/dev/null | grep -Ec '^shwordsplit$')"
     if [ "$is_wordsplit_disabled" != 0 ]; then setopt shwordsplit; fi
     ary="$(printf '%s\n' "$aryml" | $SORTDATA_ARR | tr '\n' ',' | $GSED 's|,*$||' 2>/dev/null | $GSED 's|^,*||' 2>/dev/null)"
     if [ "$is_wordsplit_disabled" != 0 ]; then unsetopt shwordsplit; fi
@@ -796,7 +796,7 @@ $key:$value"
     # the result is filtered for final output with another pass,
     # where we might indent it below.
     # Force zsh to expand $SORTDATA* into multiple words
-    is_wordsplit_disabled="$(unsetopt 2>/dev/null | grep -c '^shwordsplit$')"
+    is_wordsplit_disabled="$(unsetopt 2>/dev/null | grep -Ec '^shwordsplit$')"
     if [ "$is_wordsplit_disabled" != 0 ]; then setopt shwordsplit; fi
     obj="$(printf '%s\n' "$objml" | $SORTDATA_OBJ | tr '\n' ',' | $GSED 's|,*$||' 2>/dev/null | $GSED 's|^,*||' 2>/dev/null)"
     if [ "$is_wordsplit_disabled" != 0 ]; then unsetopt shwordsplit; fi
