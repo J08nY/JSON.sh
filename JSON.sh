@@ -139,7 +139,9 @@ if [ -z "${JSONSH_SOURCED-}" ]; then
         bash)
             # All this weird parsing because busybox sh can't handle a
             # ${BASH_SOURCE[0]} in a codepath it does not even execute
-            if  [ "$0" = "$BASH_SOURCE" ] || set | grep -E '^BASH_SOURCE=\(.*\]="'"$0"'"' >/dev/null ; then
+            if  [ "$0" = "$BASH_SOURCE" ] || set | grep -E '^BASH_SOURCE=\(\[0\]="'"$0"'"' >/dev/null ; then
+                # (Top-most) executed script filename is same as this
+                # source filename for JSON.sh => standalone script mode
                 JSONSH_SOURCED=no
             else
                 if  [ -n "${BASH-}" ] ; then
