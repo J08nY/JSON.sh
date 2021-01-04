@@ -260,7 +260,8 @@ usage() {
   echo "     around values to ease backticked picking of exact data path items"
   echo '     into scripts (non-exact matches will be same as multiword text):'
   echo '     VALUE="$(JSON.sh --shellable-output=strings -x '"'"'^"field"$'"'"')"'
-  echo "--shellable-output=string - same but returns one string (first hit if any)"
+  echo "--shellable-output=string - same but returns one string (first hit if any,"
+  echo "     so if you need one exact match, specify it like '^"'"repository","url"$'"')"
   echo "--shellable-output=arrays - Do not print the path column, add quotes:"
   echo '     ARR=( $(JSON.sh --shellable-output=arrays -x '"'"'^"array",[0-9]'"'"') )'
   echo "--get-string 'regex' - Alias to -l -x 'regex' --shellable-output=string"
