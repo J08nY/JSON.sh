@@ -99,6 +99,10 @@ case "$SHELL_BASENAME" in
     bash)
         SHELL_REGEX=yes
         SHELL_TWOSLASH=yes
+        # bash 3.x does not support unquoted mode, newer supports both
+        if [ "/" = "$(S='\/' ; echo ${S//\\\//\/})" ]; then
+            SHELL_TWOSLASH=unquoted
+        fi
         SHELL_PIPEFAIL='set -o pipefail'
         ;;
     dash|ash) # The spartan bare minimum
