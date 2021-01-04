@@ -479,7 +479,13 @@ parse_options() {
   validate_debuglevel
 
   # For normalized data, we do the whole job and just return the top object
-  [ "$NORMALIZE" = 1 ] && BRIEF=0 && LEAFONLY=0 && PRUNE=0
+  if [ "$NORMALIZE" = 1 ]; then
+    BRIEF=0
+    LEAFONLY=0
+    PRUNE=0
+  fi
+
+  return 0
 }
 
 awk_egrep() {
