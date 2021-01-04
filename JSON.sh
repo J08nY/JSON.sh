@@ -947,9 +947,9 @@ parse_value() {
   fi
 
   print_debug $DEBUGLEVEL_PRINTPATHVAL \
-	"JPATH='$jpath' VALUE='$value' B='$BRIEF'" \
-	"isleaf='$isleaf'/L='$LEAFONLY' isempty='$isempty'/P='$PRUNE':" \
-	"print='$print'" >&2
+    "JPATH='$jpath' VALUE='$value' B='$BRIEF'" \
+    "isleaf='$isleaf'/L='$LEAFONLY' isempty='$isempty'/P='$PRUNE':" \
+    "print='$print'" >&2
 
   if [ "$print" -gt 0 ] ; then
     if [ -n "$SHELLABLE_OUTPUT" ]; then
