@@ -149,8 +149,11 @@ if [ -z "${JSONSH_SOURCED-}" ]; then
                         bash|-bash|*bin/bash|sh|-sh|*bin/sh|"$BASH")
                             # Likely sourced into interactive shell (maybe via profile)
                             JSONSH_SOURCED=yes ;;
-                        *)  echo "WARNING: Assuming JSONSH_SOURCED=no and running as a standalone bash script ($0)" >&2
+                        *JSON.sh*)  echo "WARNING: Assuming JSONSH_SOURCED=no and running as a standalone bash script ($0)" >&2
                             JSONSH_SOURCED=no
+                            ;;
+                        *)  echo "WARNING: Assuming JSONSH_SOURCED=yes and running as an inclusion into another bash script ($0)" >&2
+                            JSONSH_SOURCED=yes
                             ;;
                     esac
                 fi
