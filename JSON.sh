@@ -901,7 +901,7 @@ parse_value() {
                 case "$SHELL_TWOSLASH" in
                     yes|quoted) value="${value//\\\//\/}" ;;
                     unquoted) value=${value//\\\//\/} ;;
-                    *) value="$(echo "$value" | $GSED 's#\\/#/#g')" ;;
+                    *) value="$(echo "$value" | $GSED 's#\\\/#/#g')" ;;
                 esac
             fi
        fi
@@ -914,7 +914,7 @@ parse_value() {
             case "$SHELL_TWOSLASH" in
                 yes|quoted) value="${value//\\\//\/}" ;;
                 unquoted) value=${value//\\\//\/} ;;
-                *) value="$(echo "$value" | $GSED 's#\\/#/#g')" ;;
+                *) value="$(echo "$value" | $GSED 's#\\\/#/#g')" ;;
             esac
        fi
        isleaf=1
