@@ -683,6 +683,7 @@ parse_array() {
       while :
       do
         INDENT="${INDENT_NEXT}" parse_value "$1" "$index"
+        if $QUICK_ABORT ; then return 0 ; fi
         index="$(expr $index + 1)"
         if [ "$PRETTYPRINT" = 1 ]; then
             [ -z "$ary" ] && ary="${INDENT_NEXT}$value" || ary="$ary
@@ -760,6 +761,7 @@ parse_object() {
         read -r token
         print_debug $DEBUGLEVEL_PRINTTOKEN "parse_object(3):" "token='$token'"
         INDENT="${INDENT_NEXT}" parse_value "$1" "$key"
+        if $QUICK_ABORT ; then return 0 ; fi
         if [ "$PRETTYPRINT" = 1 ]; then
             [ -z "$obj" ] && obj="${INDENT_NEXT}$key${PRETTYPRINT_OBJSEP}$value" || obj="$obj
 ${INDENT_NEXT}$key${PRETTYPRINT_OBJSEP}$value"
