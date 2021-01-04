@@ -137,7 +137,9 @@ if [ -z "${JSONSH_SOURCED-}" ]; then
     if [ -n "${DEBUG-}" ] && [ "$DEBUG" != 0 ] && [ "$DEBUG" != no ]; then set | egrep '^[A-Za-z0-9_].*=' | sort >&2 ; fi
     case "$SHELL_BASENAME" in
         bash)
-            if  [ "$0" = "${BASH_SOURCE[0]}" ] || [ "$0" = "$BASH_SOURCE" ] ; then
+            # All this weird parsing because busybox sh can't handle a
+            # ${BASH_SOURCE[0]} in a codepath it does not even execute
+            if  [ "$0" = "$BASH_SOURCE" ] || set | grep -E '^BASH_SOURCE=\(.*\]="'"$0"'"' >/dev/null ; then
                 JSONSH_SOURCED=no
             else
                 if  [ -n "${BASH-}" ] ; then
