@@ -65,7 +65,7 @@ before_install:
 #- if [ "$TRAVIS_OS_NAME" = "osx" ] ; then sudo git -C /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core fetch --unshallow || true ; fi
 #- if [ "$TRAVIS_OS_NAME" = "osx" ] ; then sudo git -C /usr/local/Homebrew/Library/Taps/homebrew/homebrew-cask fetch --unshallow || true ; fi
 #- if [ "$TRAVIS_OS_NAME" = "osx" ] ; then brew update ; fi
-- if [ "$TRAVIS_OS_NAME" = "osx" ] ; then brew install $SHELL_PROGS ; fi
+- if [ "$TRAVIS_OS_NAME" = "osx" ] ; then for P in $SHELL_PROGS ; do brew install $P || brew install homebrew/cask/$P ; done ; fi
 
 #- if [ "$TRAVIS_OS_NAME" = "osx" ] ; then brew install bash ; fi
 #- if [ "$TRAVIS_OS_NAME" = "osx" ] ; then brew install dash ; fi
