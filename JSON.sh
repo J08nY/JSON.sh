@@ -134,9 +134,9 @@ esac
 
 # TODO: detect having been sourced into non-bash shells?
 if [ -z "${JSONSH_SOURCED-}" ]; then
+    if [ -n "${DEBUG-}" ] && [ "$DEBUG" != 0 ] && [ "$DEBUG" != no ]; then set | egrep '^[A-Za-z0-9_].*=' | sort >&2 ; fi
     case "$SHELL_BASENAME" in
         bash)
-            #set | sort >&2
             if  [ "$0" = "${BASH_SOURCE[0]}" ] || [ "$0" = "$BASH_SOURCE" ] ; then
                 JSONSH_SOURCED=no
             else
