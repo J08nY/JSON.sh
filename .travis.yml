@@ -81,7 +81,11 @@ before_install:
         sudo git -C /usr/local/Homebrew/Library/Taps/homebrew/homebrew-cask fetch --unshallow || true
         brew update
     fi
-    for P in $SHELL_PROGS ; do brew install $P || brew install homebrew/cask/$P ; done
+    for P in $SHELL_PROGS ; do
+      if ! command -v "$P" ; then
+        brew install $P || brew install homebrew/cask/$P
+      fi
+    done
   fi
 
 #- if [ "$TRAVIS_OS_NAME" = "osx" ] ; then brew install bash ; fi
