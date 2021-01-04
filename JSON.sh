@@ -136,12 +136,18 @@ esac
 if [ -z "${JSONSH_SOURCED-}" ]; then
     case "$SHELL_BASENAME" in
         bash)
+            #set | sort >&2
             if  [ "$0" = "$BASH_SOURCE[0]" ] || [ "$0" = "$BASH_SOURCE" ] ; then
                 JSONSH_SOURCED=no
             fi
             if  [ -n "${BASH-}" ] && [ "$0" = "-bash" ] ; then
                 JSONSH_SOURCED=yes
             fi
+            # In other cases so far, we just don't know for sure.
+            # The BASH_SOURCE array may have 2+ entries for higher-layer
+            # script names (meaning there are some levels above).
+            # The $0 may be some such script name, or "bash" without "-"
+            # for sourcing into current shell without a script file...
             ;;
         *)  JSONSH_SOURCED=no ;;
     esac
@@ -1050,6 +1056,7 @@ jsonsh_cli() {
   # NOTE: If the caller sets up some specific different debugging envvars
   # then consider changing JSONSH_DEBUGGING_SETUP and JSONSH_DEBUGGING_REPORT
   # to e.g. "notdone" as well
+  # Beware that this hangs waiting for input if there is no stdin piped here
   parse_options "$@"
   jsonsh_debugging_setup
   jsonsh_debugging_report
@@ -1080,6 +1087,7 @@ jsonsh_cli_subshell() (
 jsonsh_debugging_defaults
 
 # If NOT sourced into a bash script, parse stdin and quit
+# Beware that this hangs waiting for input if there is no stdin
 #[ "${JSONSH_SOURCED-}" != yes ] || \
 #if  [ "$0" = "$BASH_SOURCE[0]" ] || [ "$0" = "$BASH_SOURCE" ] || [ -z "${BASH-}" ] || [ -z "$BASH_SOURCE" ]; \
 if [ "${JSONSH_SOURCED-}" != yes ]
@@ -1088,6 +1096,7 @@ then
   exit $?
 fi
 
+# Else if sourced, stay dormant until called to work via a routine
 #if ([ "$0" = "$BASH_SOURCE" ] || ! [ -n "$BASH_SOURCE" ]);
 #then
 #  parse_options "$@"
