@@ -1,7 +1,7 @@
 #!/bin/sh
 #
-# Copyright (C) 2014-2015 Dominic Tarr
-# Copyright (C) 2015-2020 Eaton
+# Copyright (C) 2014-2018 Dominic Tarr and other contributors to upstream code
+# Copyright (C) 2015-2021 Eaton
 #
 #! \file    JSON.sh
 #  \brief   A json parser written in shell-script
