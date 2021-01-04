@@ -137,7 +137,7 @@ if [ -z "${JSONSH_SOURCED-}" ]; then
     case "$SHELL_BASENAME" in
         bash)
             #set | sort >&2
-            if  [ "$0" = "$BASH_SOURCE[0]" ] || [ "$0" = "$BASH_SOURCE" ] ; then
+            if  [ "$0" = "${BASH_SOURCE[0]}" ] || [ "$0" = "$BASH_SOURCE" ] ; then
                 JSONSH_SOURCED=no
             fi
             if  [ -n "${BASH-}" ] && [ "$0" = "-bash" ] ; then
