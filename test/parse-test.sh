@@ -43,7 +43,7 @@ JSONSH_OUT="$(jsonsh_cli --shellable-output=strings -x '^"name"$' < ../package.j
 if [ "$JSONSH_RES" = 0 ] && [ "$JSONSH_OUT" = 'JSON.sh' ] ; then
   echo "ok $i - package.json with extraction of one entry"
 else
-  echo "not ok $i - Parsing package.json with extraction of one entry failed!"
+  echo "not ok $i - Parsing package.json with extraction of one entry failed ($JSONSH_RES)!"
   fails="$(expr $fails + 1)"
 fi
 
@@ -54,7 +54,7 @@ if [ "$JSONSH_RES" = 0 ] && [ "$JSONSH_OUT" = '"https://github.com/dominictarr/J
 "git"' ] ; then
   echo "ok $i - package.json with extraction of several entries with array markup"
 else
-  echo "not ok $i - Parsing package.json with extraction of several entries with array markup failed!"
+  echo "not ok $i - Parsing package.json with extraction of several entries with array markup failed ($JSONSH_RES)!"
   echo "==="
   echo "$JSONSH_OUT"
   echo "==="
@@ -68,7 +68,7 @@ JSONSH_OUT="$(jsonsh_cli -So=-r --get-string '^"repository"' < ../package.json 2
 if [ "$JSONSH_RES" = 0 ] && [ "$JSONSH_OUT" = 'https://github.com/dominictarr/JSON.sh.git' ] ; then
   echo "ok $i - package.json with extraction of first of several entries with unquoted string markup"
 else
-  echo "not ok $i - Parsing package.json with extraction of first of several entries with unquoted string markup failed!"
+  echo "not ok $i - Parsing package.json with extraction of first of several entries with unquoted string markup failed ($JSONSH_RES)!"
   echo "==="
   echo "$JSONSH_OUT"
   echo "==="
