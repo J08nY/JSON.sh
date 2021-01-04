@@ -139,9 +139,16 @@ if [ -z "${JSONSH_SOURCED-}" ]; then
             #set | sort >&2
             if  [ "$0" = "${BASH_SOURCE[0]}" ] || [ "$0" = "$BASH_SOURCE" ] ; then
                 JSONSH_SOURCED=no
-            fi
-            if  [ -n "${BASH-}" ] && [ "$0" = "-bash" ] ; then
-                JSONSH_SOURCED=yes
+            else
+                if  [ -n "${BASH-}" ] ; then
+                    case "$0" in
+                        bash|-bash|*bin/bash|sh|-sh|*bin/sh)
+                            JSONSH_SOURCED=yes ;;
+                        *)  echo "WARNING: Assuming JSONSH_SOURCED=no and running as a standalone bash script" >&2
+                            JSONSH_SOURCED=no
+                            ;;
+                    esac
+                fi
             fi
             # In other cases so far, we just don't know for sure.
             # The BASH_SOURCE array may have 2+ entries for higher-layer
