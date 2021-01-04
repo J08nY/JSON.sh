@@ -88,9 +88,13 @@ before_install:
     for P in $SHELL_PROGS ; do
       if command -v "$P" ; then
         case "$P" in
-          bash) case "`bash -c 'echo $BASH_VERSION'`" in
-            1.*|2.*|3.*) ;; ### Too old, fall through to install new
-            *) continue ;;
+          bash)
+            case "`bash -c 'echo $BASH_VERSION'`" in
+              1.*|2.*|3.*)
+                ### Rather old, fall through to install new. But test both :)
+                SHELL_PROGS="$SHELL_PROGS `command -v "$P"`" ;;
+              *) continue ;;
+            esac ;;
           *) continue ;;
         esac
       fi
