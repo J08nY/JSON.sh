@@ -59,8 +59,8 @@ matrix:
 ### Currently the syntax of ksh needs too many syntax adaptations vs other shells
 #  - os: macos
 #    env: SHELL_PROGS=ksh
-  allow_failures:
-  - os: macos
+#  allow_failures:
+#  - os: macos
 #  - env: SHELL_PROGS=zsh
 #  - env: SHELL_PROGS=busybox
 #  - env: SHELL_PROGS=ksh
