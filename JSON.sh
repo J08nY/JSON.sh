@@ -149,7 +149,7 @@ if [ -z "${JSONSH_SOURCED-}" ]; then
                         bash|-bash|*bin/bash|sh|-sh|*bin/sh|"$BASH")
                             # Likely sourced into interactive shell (maybe via profile)
                             JSONSH_SOURCED=yes ;;
-                        *)  echo "WARNING: Assuming JSONSH_SOURCED=no and running as a standalone bash script" >&2
+                        *)  echo "WARNING: Assuming JSONSH_SOURCED=no and running as a standalone bash script ($0)" >&2
                             JSONSH_SOURCED=no
                             ;;
                     esac
