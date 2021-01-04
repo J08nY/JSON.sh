@@ -12,7 +12,7 @@ ptest () {
 
 fails=0
 i=0
-echo "1..7"
+echo "1..10"
 for input in \
     '"oooo"  ' \
     '[true, 1, [0, {}]]  ' \
@@ -69,6 +69,46 @@ if [ "$JSONSH_RES" = 0 ] && [ "$JSONSH_OUT" = 'https://github.com/dominictarr/JS
   echo "ok $i - package.json with extraction of first of several entries with unquoted string markup"
 else
   echo "not ok $i - Parsing package.json with extraction of first of several entries with unquoted string markup failed ($JSONSH_RES)!"
+  echo "==="
+  echo "$JSONSH_OUT"
+  echo "==="
+  fails="$(expr $fails + 1)"
+fi
+
+### Several modes of calling the script code, sourced or externalized
+i="$(expr $i + 1)"
+JSONSH_OUT="$(jsonsh_cli --get-string '^"repository","url"$' < ../package.json 2>/dev/null)" \
+&& [ -n "$JSONSH_OUT" ] ; JSONSH_RES=$?
+if [ "$JSONSH_RES" = 0 ] && [ "$JSONSH_OUT" = 'https://github.com/dominictarr/JSON.sh.git' ] ; then
+  echo "ok $i - package.json with extraction of a string by path, with jsonsh_cli() sourced method"
+else
+  echo "not ok $i - Parsing package.json with extraction of a string by path, with jsonsh_cli() sourced method, failed ($JSONSH_RES)!"
+  echo "==="
+  echo "$JSONSH_OUT"
+  echo "==="
+  fails="$(expr $fails + 1)"
+fi
+
+i="$(expr $i + 1)"
+JSONSH_OUT="$(jsonsh_cli_subshell --get-string '^"repository","url"$' < ../package.json 2>/dev/null)" \
+&& [ -n "$JSONSH_OUT" ] ; JSONSH_RES=$?
+if [ "$JSONSH_RES" = 0 ] && [ "$JSONSH_OUT" = 'https://github.com/dominictarr/JSON.sh.git' ] ; then
+  echo "ok $i - package.json with extraction of a string by path, with jsonsh_cli_subshell() sourced method"
+else
+  echo "not ok $i - Parsing package.json with extraction of a string by path, with jsonsh_cli_subshell() sourced method, failed ($JSONSH_RES)!"
+  echo "==="
+  echo "$JSONSH_OUT"
+  echo "==="
+  fails="$(expr $fails + 1)"
+fi
+
+i="$(expr $i + 1)"
+JSONSH_OUT="$($SHELL_PROG ../JSON.sh --get-string '^"repository","url"$' < ../package.json 2>/dev/null)" \
+&& [ -n "$JSONSH_OUT" ] ; JSONSH_RES=$?
+if [ "$JSONSH_RES" = 0 ] && [ "$JSONSH_OUT" = 'https://github.com/dominictarr/JSON.sh.git' ] ; then
+  echo "ok $i - package.json with extraction of a string by path, with $SHELL_PROG ../JSON.sh forked-script method"
+else
+  echo "not ok $i - Parsing package.json with extraction of a string by path, with $SHELL_PROG ../JSON.sh forked-script method, failed ($JSONSH_RES)!"
   echo "==="
   echo "$JSONSH_OUT"
   echo "==="
