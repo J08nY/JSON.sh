@@ -1095,19 +1095,11 @@ jsonsh_debugging_defaults
 
 # If NOT sourced into a bash script, parse stdin and quit
 # Beware that this hangs waiting for input if there is no stdin
-#[ "${JSONSH_SOURCED-}" != yes ] || \
-#if  [ "$0" = "$BASH_SOURCE[0]" ] || [ "$0" = "$BASH_SOURCE" ] || [ -z "${BASH-}" ] || [ -z "$BASH_SOURCE" ]; \
 if [ "${JSONSH_SOURCED-}" != yes ]
 then
   jsonsh_cli "$@"
   exit $?
 fi
-
-# Else if sourced, stay dormant until called to work via a routine
-#if ([ "$0" = "$BASH_SOURCE" ] || ! [ -n "$BASH_SOURCE" ]);
-#then
-#  parse_options "$@"
-#  tokenize | parse
-#fi
+# ...else if sourced, stay dormant until called to work via a routine
 
 # vi: expandtab sw=2 ts=2
