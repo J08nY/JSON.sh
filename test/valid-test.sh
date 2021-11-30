@@ -24,7 +24,9 @@ skips=0
 generated=0
 i=0
 
-CHOMPEXT='\.\(parsed\|sorted\|numnormalized\|normalized\|json\).*$'
+CHOMPEXT='\.\(parsed\|sorted\|jpathsOnly\|numnormalized\|normalized\|json\).*$'
+### We currently have up to 11 extensions to consider per test
+COUNTEXT=11
 [ $# -gt 0 ] && \
     FILES="$(for F in "$@"; do echo valid/"`basename "$F" | sed "s,${CHOMPEXT},,"`".json ; done | sort | uniq)" || \
     FILES="$(ls -1 valid/*.json)"
@@ -32,8 +34,7 @@ CHOMPEXT='\.\(parsed\|sorted\|numnormalized\|normalized\|json\).*$'
 [ -z "$FILES" ] && echo "error - no files found to test!" >&2 && exit 1
 
 tests="$(echo "$FILES" | wc -l)"
-### We currently have up to 10 extensions to consider per test
-tests="$(expr $tests \* 10)"
+tests="$(expr $tests \* $COUNTEXT)"
 echo "1..$tests"
 
 # Force zsh to expand $FILES into multiple words
@@ -43,14 +44,15 @@ if [ "$is_wordsplit_disabled" != 0 ]; then setopt shwordsplit; fi
 for input in $FILES
 do
   if [ "${is_wordsplit_disabled-}" != 0 ]; then unsetopt shwordsplit; is_wordsplit_disabled=0; fi
-  for EXT in parsed sorted normalized normalized_sorted \
+  for EXT in parsed sorted jpathsOnly \
+        normalized normalized_sorted \
         numnormalized numnormalized_stripped \
         normalized_numnormalized normalized_numnormalized_stripped \
         normalized_pretty normalized_sorted_pretty \
   ; do
     if [ ! -f "$input" ]; then
       echo "error - missing input file '$input', assuming all its tests failed"
-      fails="$(expr $fails + 8)"
+      fails="$(expr $fails + $COUNTEXT)"
       break
     fi
 
@@ -60,6 +62,7 @@ do
       i="$(expr $i + 1)"
       case "$EXT" in
         sorted) OPTIONS="-S='-n -r'" ;;
+        jpathsOnly) OPTIONS="-J" ;; # Test the "-J" mode for listing only JPATHs (useful e.g. to compare translation maps)
         normalized) OPTIONS="-N" ;;
         normalized_sorted) OPTIONS="-N=-n" ;;
         normalized_pretty) OPTIONS="-N --pretty-print" ;;
