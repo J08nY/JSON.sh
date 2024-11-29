@@ -56,7 +56,7 @@ as well as for strings-only before:
 a more complex example:
 
 ``` bash
-curl registry.npmjs.org/express | ./JSON.sh | egrep '\["versions","[^"]*"\]'
+curl registry.npmjs.org/express | ./JSON.sh | grep -E '\["versions","[^"]*"\]'
 ... try it and see
 ```
 

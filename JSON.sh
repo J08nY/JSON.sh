@@ -202,9 +202,7 @@ findbin() {
     GGREP="$(findbin /{usr,opt}/{gnu,sfw}/bin/grep ggrep /usr/xpg4/bin/grep grep)"
 [ -n "$GGREP" ] && [ -x "$GGREP" ] || throw "No GNU GREP was found!"
 
-[ -z "$GEGREP" ] && \
-    GEGREP="$(findbin /{usr,opt}/{gnu,sfw}/bin/egrep gegrep /usr/xpg4/bin/egrep egrep)"
-[ -n "$GEGREP" ] && [ -x "$GEGREP" ] || throw "No GNU EGREP was found!"
+[ -z "$GEGREP" ] && GEGREP="$GGREP -E"
 
 [ -z "$GSORT" ] && \
     GSORT="$(findbin /{usr,opt}/{gnu,sfw}/bin/sort gsort sort /usr/xpg4/bin/sort)"
